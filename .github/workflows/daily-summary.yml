@@ -1,11 +1,11 @@
 name: Daily Horizon Summary
 
 on:
+  workflow_dispatch:
   schedule:
-    # GitHub scheduled workflows use UTC. 20:00 UTC is 04:00 Asia/Shanghai;
-    # this intentionally runs early to offset the observed schedule delay.
-    - cron: '0 23 * * *'
-  workflow_dispatch:      # Allow manual trigger
+    - cron: '0 7 * * *'
+      timezone: 'Asia/Shanghai'    # GitHub scheduled workflows use UTC. 20:00 UTC is 04:00 Asia/Shanghai;
+    workflow_dispatch:      # Allow manual trigger
 
 jobs:
   daily-summary:
@@ -32,7 +32,10 @@ jobs:
 
       - name: Prepare GitHub Actions config
         run: cp data/config.github.json data/config.json
-
+      - name: Prepare subscribers
+        env:
+          HORIZON_SUBSCRIBERS: ${{ secrets.HORIZON_SUBSCRIBERS }}
+        run: printf '%s\n' "$HORIZON_SUBSCRIBERS" > data/subscribers.json
       - name: Run Horizon
         env:
           # Map secrets to environment variables expected by config.json
@@ -42,6 +45,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           LWN_KEY: ${{ secrets.LWN_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           HORIZON_WEBHOOK_URL: ${{ secrets.HORIZON_WEBHOOK_URL }}
         run: uv run horizon --hours 24
 
